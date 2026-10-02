@@ -1,7 +1,6 @@
 import process from "process";
 import { z } from "zod";
 
-import type { ServerEnv } from "./env-schema";
 export const REQUIRED_SERVER_ENV_VARIABLES = [
   "APIFY_PERSONAL_API_TOKEN",
   "DATABASE_URL",
