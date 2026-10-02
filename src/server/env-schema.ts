@@ -1,0 +1,54 @@
+import process from "process";
+import { z } from "zod";
+
+import type { ServerEnv } from "./env-schema";
+export const REQUIRED_SERVER_ENV_VARIABLES = [
+  "APIFY_PERSONAL_API_TOKEN",
+  "DATABASE_URL",
+  "BLOB_READ_WRITE_TOKEN",
+  "AI_GATEWAY_API_KEY",
+] as const;
+
+export function assertRequiredServerEnv(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+) {
+  const missing = REQUIRED_SERVER_ENV_VARIABLES.filter(
+    (name) => !env[name]?.trim(),
+  );
+
+  if (missing.length) {
+    console.error(
+      `Missing required environment variables: ${missing.join(", ")}`,
+    );
+    process.exit(1);
+  }
+
+  try {
+    parseServerEnv(env);
+  } catch {
+    console.error(
+      "Invalid server environment configuration. Check DATABASE_URL; it must be a valid PostgreSQL URL.",
+    );
+    process.exit(1);
+  }
+}
+
+const serverEnvSchema = z.object({
+  APIFY_PERSONAL_API_TOKEN: z.string().min(1),
+  DATABASE_URL: z.url().startsWith("postgres"),
+  BLOB_READ_WRITE_TOKEN: z.string().min(1),
+  AI_GATEWAY_API_KEY: z.string().min(1),
+});
+
+export type ServerEnv = z.infer<typeof serverEnvSchema>;
+
+export function parseServerEnv(
+  env: Readonly<Record<string, string | undefined>>,
+): ServerEnv {
+  return serverEnvSchema.parse({
+    APIFY_PERSONAL_API_TOKEN: env.APIFY_PERSONAL_API_TOKEN,
+    DATABASE_URL: env.DATABASE_URL,
+    BLOB_READ_WRITE_TOKEN: env.BLOB_READ_WRITE_TOKEN,
+    AI_GATEWAY_API_KEY: env.AI_GATEWAY_API_KEY,
+  });
+}
